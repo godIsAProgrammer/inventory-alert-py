@@ -1,0 +1,5 @@
+[project]
+name = "inventory-alert-py"
+version = "0.1.0"
+description = "A small inventory threshold alert service"
+requires-python = ">=3.11"
