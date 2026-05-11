@@ -157,12 +157,18 @@ curl 'http://127.0.0.1:8791/items?status=ok'
 
 ## Docker 环境
 
-确保 Docker Desktop 已启动。项目不依赖额外编排工具，使用单镜像命令即可完成验证。
+确保 Docker Desktop 已启动。质检上传上下文为 `Dockerfile + repo/`，Dockerfile 会把
+`repo/` 内容复制到容器 `/app`，只初始化运行环境，不执行测试或 Git 初始化。
 
 构建镜像：
 
 ```bash
-docker build -t inventory-alert-py .
+ROOT=$(pwd -P)
+tmp=$(mktemp -d)
+cp Dockerfile "$tmp/Dockerfile"
+mkdir -p "$tmp/repo"
+rsync -a --exclude='.git' --exclude='__pycache__' --exclude='*.pyc' ./ "$tmp/repo/"
+docker build -t inventory-alert-py "$tmp"
 ```
 
 启动 HTTP 服务：
@@ -183,10 +189,10 @@ curl http://127.0.0.1:8791/health
 {"ok":true}
 ```
 
-运行容器内测试：
+运行测试：
 
 ```bash
-docker run --rm inventory-alert-py python -m unittest discover -s tests
+python -m unittest discover -s tests
 ```
 
 验证容器工作目录：
@@ -200,14 +206,6 @@ docker run --rm inventory-alert-py pwd
 ```text
 /app
 ```
-
-验证容器内初始 Git 工作区：
-
-```bash
-docker run --rm inventory-alert-py git status --short
-```
-
-预期没有任何输出，表示容器内 `/app` 是干净的初始仓库。
 
 ## 常见问题
 
